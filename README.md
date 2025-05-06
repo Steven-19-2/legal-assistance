@@ -1,3 +1,3 @@
 # legalassistanceforcivilcases
 
-[Edit in StackBlitz next generation editor ⚡️](https://stackblitz.com/~/github.com/imdshah/legalassistanceforcivilcases)
+[Edit in StackBlitz next generation editor ⚡️](https://stackblitz.com/~/github.com/Steven-19-2/legal-assistance)
