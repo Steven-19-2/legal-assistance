@@ -7,6 +7,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+.venv/
+
+unsloth.Q5_K_M.gguf
 node_modules
 dist
 dist-ssr
