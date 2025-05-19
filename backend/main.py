@@ -14,7 +14,7 @@ llm = Llama(
     n_threads=4,
     stream=True
 )
-
+  
 client = QdrantClient(path="qdrant_local_db")  # Local embedded storage
 COLLECTION_NAME = "legal_chunks"
 
@@ -22,15 +22,27 @@ embedder = SentenceTransformer("sentence-transformers/multi-qa-distilbert-cos-v1
 # -------------------- Create Collection (if not exists) --------------------
 embedding_dim = embedder.get_sentence_embedding_dimension()
 
-client.recreate_collection(
-    collection_name=COLLECTION_NAME,
-    vectors_config=models.VectorParams(
-        size=embedding_dim,
-        distance=models.Distance.COSINE
+# client.recreate_collection(
+#     collection_name=COLLECTION_NAME,
+#     vectors_config=models.VectorParams(
+#         size=embedding_dim,
+#         distance=models.Distance.COSINE
+#     )
+# )
+    
+existing_collections = [col.name for col in client.get_collections().collections]
+
+if COLLECTION_NAME not in existing_collections:
+    client.create_collection(
+        collection_name=COLLECTION_NAME,
+        vectors_config=models.VectorParams(
+            size=embedding_dim,
+            distance=models.Distance.COSINE
+        )
     )
-)
-    
-    
+    print(f"Collection '{COLLECTION_NAME}' created.")
+else:
+    print(f"Collection '{COLLECTION_NAME}' already exists.")    
 
 app = FastAPI()
 
@@ -53,15 +65,28 @@ class ChatRequest(BaseModel):
 
 
 # -------------------- RAG Logic --------------------
+# def retrieve_context(query: str, top_k=3) -> str:
+#     query_vector = embedder.encode(query).tolist()
+#     results = client.search(
+#         collection_name=COLLECTION_NAME,
+#         query_vector=query_vector,
+#         limit=top_k
+#     )
+#     context_chunks = [hit.payload["text"] for hit in results if "text" in hit.payload]
+#     return "\n".join(context_chunks)
+
 def retrieve_context(query: str, top_k=3) -> str:
-    query_vector = embedder.encode(query).tolist()
-    results = client.search(
-        collection_name=COLLECTION_NAME,
-        query_vector=query_vector,
-        limit=top_k
-    )
-    context_chunks = [hit.payload["text"] for hit in results if "text" in hit.payload]
-    return "\n".join(context_chunks)
+    try:
+        query_vector = embedder.encode(query).tolist()
+        results = client.search(
+            collection_name=COLLECTION_NAME,
+            query_vector=query_vector,
+            limit=top_k
+        )
+        context_chunks = [hit.payload["text"] for hit in results if "text" in hit.payload]
+        return "\n".join(context_chunks)
+    except Exception as e:
+        return f"[Error in context retrieval] {e}"
 
 
 def stream_response(prompt: str):
